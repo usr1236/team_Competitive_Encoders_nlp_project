@@ -16,7 +16,7 @@ MAX_LEN = 256
 
 # Selection hyperparameters
 # Largest-gap selection with a minimum floor.
-MIN_SIMILARITY_THRESHOLD = 0.45
+MIN_SIMILARITY_THRESHOLD = 0.70
 
 TEST_JSON = "test_data/subtask 2/test_data_subtask_2.json"
 OUT_DIR = "results_subtask2_minilm"

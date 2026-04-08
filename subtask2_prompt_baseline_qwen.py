@@ -14,6 +14,7 @@ from tqdm.auto import tqdm
 MODEL_NAME = "Qwen/Qwen2.5-1.5B-Instruct"
 MAX_NEW_TOKENS = 80
 MAX_LEN = 768
+PRINT_RAW_MODEL_OUTPUT = True
 
 TEST_JSON = "test_data/subtask 2/test_data_subtask_2.json"
 OUT_DIR = "results_subtask2_prompt_baseline"
@@ -96,32 +97,39 @@ def build_prompt(premises: List[str], conclusion: str) -> str:
         '{"relevant_premises": [indices]}\n\n'
         f"Premises:\n{premise_lines}\n\n"
         f"Conclusion:\n{conclusion}\n"
+        "Answer:\n"
     )
 
 
 def parse_relevant_premises(generated_text: str, num_premises: int) -> List[int]:
-    # First try to parse strict JSON.
-    json_match = re.search(r"\{[\s\S]*\}", generated_text)
-    if json_match:
-        candidate = json_match.group(0)
-        try:
-            parsed = json.loads(candidate)
-            indices = parsed.get("relevant_premises", [])
-            cleaned = []
-            for x in indices:
-                if isinstance(x, int) and 0 <= x < num_premises:
-                    cleaned.append(x)
-            return sorted(list(set(cleaned)))
-        except Exception:
-            pass
+    def _clean_indices(indices) -> List[int]:
+        cleaned = []
+        for x in indices:
+            if isinstance(x, int) and 0 <= x < num_premises:
+                cleaned.append(x)
+        return sorted(list(set(cleaned)))
 
-    found = re.findall(r"(?<!\d)(\d+)(?!\d)", generated_text)
-    cleaned = []
-    for tok in found:
-        idx = int(tok)
-        if 0 <= idx < num_premises:
-            cleaned.append(idx)
-    return sorted(list(set(cleaned)))
+    # Try to decode any JSON object present in the text and use the first one
+    # that contains the required key.
+    decoder = json.JSONDecoder()
+    for match in re.finditer(r"\{", generated_text):
+        start = match.start()
+        try:
+            parsed, _ = decoder.raw_decode(generated_text[start:])
+        except json.JSONDecodeError:
+            continue
+
+        if isinstance(parsed, dict) and "relevant_premises" in parsed:
+            return _clean_indices(parsed.get("relevant_premises", []))
+
+    # Fallback: only parse numbers from an explicit relevant_premises list.
+    list_match = re.search(r'"relevant_premises"\s*:\s*\[([^\]]*)\]', generated_text)
+    if list_match:
+        found = re.findall(r"(?<!\d)(\d+)(?!\d)", list_match.group(1))
+        return _clean_indices([int(tok) for tok in found])
+
+    # No reliable structured output found.
+    return []
 
 
 @torch.no_grad()
@@ -151,6 +159,10 @@ def predict_relevant_premises(model, tokenizer, item: Dict[str, Any], device: st
     input_len = enc["input_ids"].shape[1]
     gen_tokens = out_ids[0][input_len:]
     gen_text = tokenizer.decode(gen_tokens, skip_special_tokens=True)
+
+    if PRINT_RAW_MODEL_OUTPUT:
+        item_id = item.get("id", "unknown")
+        print(f"\n[Raw model output | id={item_id}]\n{gen_text}\n")
 
     return parse_relevant_premises(gen_text, len(premises))
 
