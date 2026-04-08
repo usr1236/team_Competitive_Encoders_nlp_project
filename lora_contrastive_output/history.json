@@ -1,0 +1,56 @@
+[
+  {
+    "epoch": 0,
+    "cls": null,
+    "total": null,
+    "note": "pre-training baseline",
+    "accuracy": 76.4398,
+    "content_effect": 43.1738,
+    "combined_score": 15.9644
+  },
+  {
+    "epoch": 1,
+    "cls": 4.932724737353968,
+    "total": 1.3495133443605862,
+    "contrastive": 0.36992746522406483,
+    "accuracy": 95.288,
+    "content_effect": 4.2775,
+    "combined_score": 35.7762
+  },
+  {
+    "epoch": 2,
+    "cls": 0.09468411651090228,
+    "total": 0.9797363046867152,
+    "contrastive": 0.3646674369332157,
+    "accuracy": 95.8115,
+    "content_effect": 6.383,
+    "combined_score": 31.9459
+  },
+  {
+    "epoch": 3,
+    "cls": 0.1331074364200423,
+    "total": 0.6248973744625681,
+    "contrastive": 0.3633330816300861,
+    "accuracy": 96.8586,
+    "content_effect": 5.3191,
+    "combined_score": 34.0622
+  },
+  {
+    "epoch": 4,
+    "cls": 0.02407531767203335,
+    "total": 0.517565892980324,
+    "contrastive": 0.36284477980453755,
+    "accuracy": 96.3351,
+    "content_effect": 6.383,
+    "combined_score": 32.1205
+  },
+  {
+    "epoch": 5,
+    "cls": 0.020635550598051982,
+    "total": 0.4889623064465255,
+    "contrastive": 0.36258776812079335,
+    "accuracy": 96.3351,
+    "content_effect": 6.383,
+    "combined_score": 32.1205
+  }
+]
