@@ -1,0 +1,1274 @@
+[
+  {
+    "id": "475136be-7882-4a13-8db4-f7637e874037",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "8520e52d-7745-4fce-a62d-8a41396e6c41",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "4500dad6-d2fe-47b6-81bf-219cd5e0862e",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      5
+    ]
+  },
+  {
+    "id": "5435889a-7219-4dd2-8725-df3241523ec9",
+    "validity": true,
+    "relevant_premises": [
+      3,
+      5
+    ]
+  },
+  {
+    "id": "f52a7733-c9ae-4f34-96b9-500f843088ff",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "2fcda2cd-788c-415e-99ee-1dd5be787bd2",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "87464757-d158-4527-87bb-6a7b290ba425",
+    "validity": true,
+    "relevant_premises": [
+      4,
+      6
+    ]
+  },
+  {
+    "id": "a3a4fcb5-1d5e-45ce-a169-f4aebd45c647",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      4
+    ]
+  },
+  {
+    "id": "91fdc13e-f260-455d-a1fd-268b8673bda0",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "940d111c-e2e6-4bd5-a2b4-9afd6f378289",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "6cb9fb92-606d-4b6a-9ab1-9d5bb36c9228",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "2af0706a-8d34-413e-ac47-1f24296c52eb",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "0770f0f7-feb3-4169-be1f-646567e29409",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "13ef764a-9eb3-48b0-a41a-7b2f833fae95",
+    "validity": true,
+    "relevant_premises": [
+      4,
+      6
+    ]
+  },
+  {
+    "id": "481cb67d-3565-4d95-8f79-38c3ba131433",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      6
+    ]
+  },
+  {
+    "id": "748ae994-ac7c-4e19-9e4a-cab8048215cf",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "000fbde6-6fc2-49dc-ab14-cf95dda67d94",
+    "validity": true,
+    "relevant_premises": [
+      5,
+      6
+    ]
+  },
+  {
+    "id": "0d9b4434-41fc-4110-a0ca-9526a0815393",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "ccd35976-4bc6-4985-a3fe-4dbd9e6ad7bf",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "c9c73430-6ad4-462e-b152-22373fc7f190",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "3436086f-b4f8-42a2-83d2-cc48a62c299c",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "4ddc6c8e-d673-4d32-b049-85588962bda2",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      4
+    ]
+  },
+  {
+    "id": "e100e58d-91f4-4bda-82ef-c04deffbf9b7",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      3
+    ]
+  },
+  {
+    "id": "7e9988e5-fe70-4bc0-8353-0ee651fe9f41",
+    "validity": true,
+    "relevant_premises": [
+      3,
+      5
+    ]
+  },
+  {
+    "id": "8ec34470-bc14-4b61-931b-02f4f896c9cc",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      5
+    ]
+  },
+  {
+    "id": "0e4a5d42-ed32-4d80-9a8e-69083a000c6b",
+    "validity": true,
+    "relevant_premises": [
+      3,
+      4
+    ]
+  },
+  {
+    "id": "827501ed-c55b-4086-93ca-725937e36d35",
+    "validity": true,
+    "relevant_premises": [
+      5,
+      6
+    ]
+  },
+  {
+    "id": "5c31592a-c054-4a84-9e75-c3eac5f6f151",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      4
+    ]
+  },
+  {
+    "id": "a7411975-0795-439e-a7ba-7a876c1472b6",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "0414ecd8-afe3-4117-95a4-6f4c40fbcfd9",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      4
+    ]
+  },
+  {
+    "id": "dbd81e96-ad42-4269-95ca-c32bc1b24414",
+    "validity": true,
+    "relevant_premises": [
+      1,
+      4
+    ]
+  },
+  {
+    "id": "e3b75c77-f830-40d5-8f9b-fdaa7001e90f",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "3cca8859-210b-4f34-a280-f902e13266a0",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "05f57df2-20da-4edc-acfe-0aba7bd12214",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      4
+    ]
+  },
+  {
+    "id": "41eed5fc-cd3a-41e3-8bd7-5e7fb73dc0b9",
+    "validity": true,
+    "relevant_premises": [
+      3,
+      6
+    ]
+  },
+  {
+    "id": "f84a8c20-9620-4b2a-8fcb-0dc1d409d712",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "b6930aa6-f738-4ecc-9cc7-5ae504b5932b",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      4
+    ]
+  },
+  {
+    "id": "937e936e-3b58-4639-b9e1-3b642b530adc",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      4
+    ]
+  },
+  {
+    "id": "03ab6d97-0784-4f37-8d72-eaca21d7f047",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      6
+    ]
+  },
+  {
+    "id": "222008a1-c452-4bcd-a6f8-f6d89879d301",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "75aeea15-b66c-44b3-8631-b329d0240eb0",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      6
+    ]
+  },
+  {
+    "id": "b3adead3-5fa0-4973-939a-1b902b5a948c",
+    "validity": true,
+    "relevant_premises": [
+      3,
+      5
+    ]
+  },
+  {
+    "id": "02dc1b7a-d112-49f9-87d5-4dcbc0c7dc88",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "0fe6027a-8d83-4098-88a9-bd44353da90b",
+    "validity": true,
+    "relevant_premises": [
+      3,
+      4
+    ]
+  },
+  {
+    "id": "3c1b4ffe-3746-4c7f-bc7f-8d5cbbf5ca07",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "13575f3e-1522-44f5-8c47-321f62e6f893",
+    "validity": true,
+    "relevant_premises": [
+      3,
+      4
+    ]
+  },
+  {
+    "id": "78ee380c-b37a-498a-87c7-79b60381fbf8",
+    "validity": true,
+    "relevant_premises": [
+      5,
+      6
+    ]
+  },
+  {
+    "id": "4998efac-37e9-4340-b1d8-2b8a6ba8e905",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      6
+    ]
+  },
+  {
+    "id": "ff3d578e-4480-4a12-be36-f54de7468dd4",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      5
+    ]
+  },
+  {
+    "id": "2f6fc064-1663-433c-a06b-a8c8640f4d0a",
+    "validity": true,
+    "relevant_premises": [
+      5,
+      6
+    ]
+  },
+  {
+    "id": "9cf14624-8b18-49b4-8b52-d6c522fb9b65",
+    "validity": true,
+    "relevant_premises": [
+      1,
+      5
+    ]
+  },
+  {
+    "id": "e7bed2b7-997d-4c22-bb0e-b70ba2be9d03",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "d6495c1e-49da-4572-9897-ae62f471fca5",
+    "validity": true,
+    "relevant_premises": [
+      4,
+      5
+    ]
+  },
+  {
+    "id": "116bc8f3-189b-460e-8769-1f15f1944d4f",
+    "validity": true,
+    "relevant_premises": [
+      4,
+      5
+    ]
+  },
+  {
+    "id": "4c04b2ed-955d-464d-b361-d0576a3fddaa",
+    "validity": true,
+    "relevant_premises": [
+      5,
+      6
+    ]
+  },
+  {
+    "id": "e92098a6-73d1-488a-91cc-50a43aa3e881",
+    "validity": true,
+    "relevant_premises": [
+      1,
+      5
+    ]
+  },
+  {
+    "id": "829655f3-fd59-4c0d-b1b9-95acda711640",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      4
+    ]
+  },
+  {
+    "id": "e6268e90-148b-4167-b091-9f7b5fbcd995",
+    "validity": true,
+    "relevant_premises": [
+      1,
+      4
+    ]
+  },
+  {
+    "id": "2fc2e699-9092-4952-9259-9dc2f73d7e1e",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "d1eb2762-3599-49ea-9b9e-9dec9d55191b",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "7b1b1643-cfdd-40fd-9718-1b9d2249386f",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      5
+    ]
+  },
+  {
+    "id": "b5649ae6-3494-4818-9e02-aefb1dcffb66",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "fd146481-397a-4ef9-a426-8eeb1d50920c",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "8f822d7c-04f7-4fab-964e-ad72e6435fd9",
+    "validity": true,
+    "relevant_premises": [
+      3,
+      6
+    ]
+  },
+  {
+    "id": "06c6b515-4528-48e5-86e8-13445caac97d",
+    "validity": true,
+    "relevant_premises": [
+      5,
+      6
+    ]
+  },
+  {
+    "id": "0585035e-997f-4f5c-bf9c-63ed226986f8",
+    "validity": true,
+    "relevant_premises": [
+      1,
+      6
+    ]
+  },
+  {
+    "id": "e6270d7e-7f0d-4ef7-8960-703b4f0687c8",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "a76ae789-d600-4f63-a83f-ca3a82db9791",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "fb4e2d04-3e63-42d7-8bbe-3f9bdc8d0796",
+    "validity": true,
+    "relevant_premises": [
+      1,
+      6
+    ]
+  },
+  {
+    "id": "fbc481c6-2065-4ea2-98d6-ef28681f3c1e",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "606ce281-2e09-47ec-b0b5-f02e9b1d2e08",
+    "validity": true,
+    "relevant_premises": [
+      4,
+      5
+    ]
+  },
+  {
+    "id": "fb4589d3-c611-4dcf-b675-963e0f6795bc",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "f76bd758-c451-4646-9712-923f820558ce",
+    "validity": true,
+    "relevant_premises": [
+      3,
+      6
+    ]
+  },
+  {
+    "id": "00ca6a3e-c3ec-4c87-b27c-75129646a5ac",
+    "validity": true,
+    "relevant_premises": [
+      1,
+      4
+    ]
+  },
+  {
+    "id": "3349018e-450c-4c6f-9345-a6bc16448b51",
+    "validity": true,
+    "relevant_premises": [
+      3,
+      5
+    ]
+  },
+  {
+    "id": "a90018f5-6a80-43ef-9ede-c1020485d5e3",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "bfe99cc9-ba01-4c71-9913-02a1ba2f6ee5",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "6a74b040-de9d-4224-9d55-f86f6be225bb",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "dd787012-315f-464b-a14e-263567e9276a",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "dec31e28-6138-4bc7-899b-dd253659e2a6",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "f0f2c7ca-4f49-4800-ac03-d5a063c1df06",
+    "validity": true,
+    "relevant_premises": [
+      1,
+      4
+    ]
+  },
+  {
+    "id": "88658837-eb19-4208-9285-2941623d6a1f",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      6
+    ]
+  },
+  {
+    "id": "43168bc4-ad6a-4560-913a-4f60accd4153",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "fb452a9b-fa0f-42aa-b127-435fba3eeffe",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "c3b541ad-6fd6-4d05-b66b-dcadd8eaff17",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "8c097166-cedb-460b-ab20-c2525411c0da",
+    "validity": true,
+    "relevant_premises": [
+      1,
+      4
+    ]
+  },
+  {
+    "id": "9d57ec74-ab4d-43de-8d77-0a0589821eee",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "75568494-6110-4e73-a696-2b7562c816fc",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "2aef73c8-102e-4b99-964a-c857015080d2",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "e4f0717d-4242-4a9f-8042-1fb3a1a32267",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "8aa1804a-2d59-426f-b713-b26615893222",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "0aee2dad-4a03-4365-9960-b29d1d5ee954",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "376e7a63-6734-4107-8ba6-09d1237768f7",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "2fc082ad-9225-4960-9421-4ea7dacd2018",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      5
+    ]
+  },
+  {
+    "id": "bb6f5c72-0574-44d2-a434-84eb2c7958de",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      4
+    ]
+  },
+  {
+    "id": "e1f2cb12-77c7-48b0-9b54-74b9520d7cd2",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "40ec906c-f0f0-44ac-94fc-1f8d08532e54",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "5536506a-1568-4974-8d64-e88b1f4ba67a",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      6
+    ]
+  },
+  {
+    "id": "160962aa-7fdb-40ab-9830-10bfd7969de9",
+    "validity": true,
+    "relevant_premises": [
+      1,
+      4
+    ]
+  },
+  {
+    "id": "e55021cc-d9cc-45f9-8f17-5c5703abaa2e",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      5
+    ]
+  },
+  {
+    "id": "9ff45eb4-dc4d-41da-be5f-878b4ce55f3e",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "9d1af1d7-305e-4824-b308-bb406ffd593a",
+    "validity": true,
+    "relevant_premises": [
+      1,
+      4
+    ]
+  },
+  {
+    "id": "4fd39990-bb6a-45d3-9954-5725a603fb98",
+    "validity": true,
+    "relevant_premises": [
+      4,
+      6
+    ]
+  },
+  {
+    "id": "bf09c9b0-23a5-4e1b-8a97-82f0d435ebb1",
+    "validity": true,
+    "relevant_premises": [
+      3,
+      6
+    ]
+  },
+  {
+    "id": "985527b7-1abb-4f3c-a817-1de80cbfb639",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "a4af20d3-7e95-480b-8ed4-66f1c6ba4e24",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "83d43abe-5415-4ed5-ad43-d11d1b5e7b8d",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      4
+    ]
+  },
+  {
+    "id": "1d0a8cc8-511a-49e9-b7c4-33e56bf8b717",
+    "validity": true,
+    "relevant_premises": [
+      4,
+      5
+    ]
+  },
+  {
+    "id": "8e8e91ab-4604-4dce-a5b0-eb2fbf420979",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "0a8e99ba-8266-410b-a45e-fe8ef78cc9fa",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      6
+    ]
+  },
+  {
+    "id": "384f2e8b-925c-4df3-9b55-3ece59b27eb3",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      4
+    ]
+  },
+  {
+    "id": "47fea0a7-1b6f-4927-a8f8-871283c28ae2",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      4
+    ]
+  },
+  {
+    "id": "14995158-8783-472e-8d43-0060409d2ff3",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "2561c7cc-5468-4e8f-9218-fc9537b2fce0",
+    "validity": true,
+    "relevant_premises": [
+      3,
+      4
+    ]
+  },
+  {
+    "id": "844ea4a5-742c-48ab-a51d-f4528a721d5d",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "eeddd9f1-c73e-4d27-ba60-a37c5e72b202",
+    "validity": true,
+    "relevant_premises": [
+      3,
+      4
+    ]
+  },
+  {
+    "id": "66efe831-2568-43ed-b4ca-5852c57765fa",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "06bbb4ca-fac6-420d-8699-2c7e98d6d467",
+    "validity": true,
+    "relevant_premises": [
+      1,
+      6
+    ]
+  },
+  {
+    "id": "cffdffdb-ee4b-4fad-8078-7dfa6c726cdf",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "4c62aa84-1fe9-4b64-88b7-d0412f7e0f92",
+    "validity": true,
+    "relevant_premises": [
+      3,
+      5
+    ]
+  },
+  {
+    "id": "abca1c3b-76b6-4d72-aedc-af9ce43804d0",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      6
+    ]
+  },
+  {
+    "id": "f2d3deeb-c993-423d-9d52-4fe4c1197462",
+    "validity": true,
+    "relevant_premises": [
+      1,
+      4
+    ]
+  },
+  {
+    "id": "14a6c437-a831-433f-ba9e-ca32c74c034f",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "94a76b11-bae4-4aa6-a918-84b9f2cd2c96",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      4
+    ]
+  },
+  {
+    "id": "31987997-e00c-45a9-adfc-7f388d617b46",
+    "validity": true,
+    "relevant_premises": [
+      3,
+      5
+    ]
+  },
+  {
+    "id": "f79690a3-e74b-4640-af97-bfd0cd76210d",
+    "validity": true,
+    "relevant_premises": [
+      1,
+      4
+    ]
+  },
+  {
+    "id": "011c2e89-176c-4bd1-827e-aa61b7216141",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "6a9c3fb2-43dd-40cc-9dc9-2f9fbe90732e",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "81cb2241-43b4-49e3-82d9-68e26eaf5fdc",
+    "validity": true,
+    "relevant_premises": [
+      4,
+      6
+    ]
+  },
+  {
+    "id": "9684a258-1524-4a08-9593-bea016062c50",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "fd87efa9-5d39-422d-b1e3-55634847b186",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      6
+    ]
+  },
+  {
+    "id": "8c1ad7e9-017e-4708-9c1a-ef9ac3bb67b6",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "c8908215-723a-4261-933e-058e8f67cb4c",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      6
+    ]
+  },
+  {
+    "id": "c4b37bb2-5e8b-4609-a101-86b32d48d9f8",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      5
+    ]
+  },
+  {
+    "id": "2327b133-072d-4c10-bf02-a8a7f1e8fc1b",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      4
+    ]
+  },
+  {
+    "id": "76a3907d-0eaf-4405-9452-fbeb5b0e00ac",
+    "validity": true,
+    "relevant_premises": [
+      1,
+      5
+    ]
+  },
+  {
+    "id": "f5bfa535-1576-41ba-944d-49ef0fb1300d",
+    "validity": true,
+    "relevant_premises": [
+      3,
+      4
+    ]
+  },
+  {
+    "id": "ac6bafa0-177d-4d43-84e1-6bcaa93a5f0a",
+    "validity": true,
+    "relevant_premises": [
+      1,
+      4
+    ]
+  },
+  {
+    "id": "fb63edc1-6436-461b-9222-187eb3a5175a",
+    "validity": true,
+    "relevant_premises": [
+      1,
+      6
+    ]
+  },
+  {
+    "id": "bac58e8e-48c5-4c3b-910b-0dd6d9b3f34a",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      4
+    ]
+  },
+  {
+    "id": "d01ac50d-bcb8-4896-a3d3-79ff8b0d5e6d",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "c04d8d8b-f85d-4ea5-b3ff-0caf9f417901",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      6
+    ]
+  },
+  {
+    "id": "90c19cbc-0da8-42d7-8314-bae9b38e856d",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "cc295dc0-2510-4fed-add9-041ea0135bfe",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      5
+    ]
+  },
+  {
+    "id": "d9992647-46b8-4ebf-b524-04dd6bb72c93",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "43ec0969-37ee-4c41-bda0-f02d7f3ac73d",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "cecc600d-a1ef-4dee-8d46-34c0ae75717b",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "a60fa282-1dc1-4ebb-9c9c-be18427ade5b",
+    "validity": true,
+    "relevant_premises": [
+      4,
+      5
+    ]
+  },
+  {
+    "id": "8b121096-1d1b-47c0-94be-977d86397342",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "1b10d979-fb9e-4035-91e9-e5d5baec87d4",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "48094573-1d85-469a-ba05-7764dc2cb20b",
+    "validity": true,
+    "relevant_premises": [
+      1,
+      4
+    ]
+  },
+  {
+    "id": "dcaa3be4-33c1-4ff2-9e3d-394d1d6be8f7",
+    "validity": true,
+    "relevant_premises": [
+      5,
+      6
+    ]
+  },
+  {
+    "id": "c6c1a6bc-b219-4e08-86c4-2911094a123a",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      6
+    ]
+  },
+  {
+    "id": "4d91d78c-e584-4719-8958-0c7737a6fa73",
+    "validity": true,
+    "relevant_premises": [
+      1,
+      4
+    ]
+  },
+  {
+    "id": "e95b684b-8253-4822-9102-b6edf51cfddc",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "daebe6d4-2151-4afe-a7e1-c4bd2330058a",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "89380b59-abe8-431f-8ef4-17b75502c073",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "23718c20-b51f-4674-9e86-1d79992d7916",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "496e2da3-ec64-4683-a487-a41aaf21fa6d",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      4
+    ]
+  },
+  {
+    "id": "84b11b4d-ae73-4410-9d32-d75e89736078",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "0bb4efce-aca9-4313-a66a-29e158248ac0",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "d42bd32f-417e-4eb2-95ba-50479d12dc94",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      6
+    ]
+  },
+  {
+    "id": "f8a6fbb9-1c07-450f-ba8f-c87e493dd566",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      6
+    ]
+  },
+  {
+    "id": "1d343eb3-d9ef-4189-806f-3aaad007b61e",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      5
+    ]
+  },
+  {
+    "id": "56ec38ff-d0c7-4857-a839-2a0be492fb5d",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      5
+    ]
+  },
+  {
+    "id": "f1f9d1ec-d8c3-40fc-bb57-f5f52d9e5119",
+    "validity": true,
+    "relevant_premises": [
+      5,
+      6
+    ]
+  },
+  {
+    "id": "8ed0fe21-b44e-4b3d-bb0b-c94526b64c7e",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "127a6adb-6d23-4e4a-956a-018459b6d8d4",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "36cb6216-d51c-4ef3-a10b-34fb07835399",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      4
+    ]
+  },
+  {
+    "id": "db746470-8dc3-4f93-af0d-f47960948a23",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "4cfef20f-d0b9-414e-b41d-bee7934881d4",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      5
+    ]
+  },
+  {
+    "id": "b36bc7c5-3c43-4c7d-b2cb-4b2b9aaade87",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "0ebe836c-53a2-4d74-883e-ca29c55cc350",
+    "validity": true,
+    "relevant_premises": [
+      4,
+      5
+    ]
+  },
+  {
+    "id": "4fdedb11-4451-4727-87f2-195f2dab47d1",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "c5532f78-b5f6-4180-a452-d31f8484670f",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      2
+    ]
+  },
+  {
+    "id": "e69a2c9c-d1e1-4135-be2b-5927076a1a55",
+    "validity": true,
+    "relevant_premises": [
+      5,
+      6
+    ]
+  },
+  {
+    "id": "156e6c95-61c1-4eb8-a897-3a21751f2843",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "8851289c-ee51-4c50-b917-e742671b30cc",
+    "validity": true,
+    "relevant_premises": [
+      0,
+      5
+    ]
+  },
+  {
+    "id": "25d671a3-2356-465f-ab57-435aa0bb5d67",
+    "validity": true,
+    "relevant_premises": [
+      1,
+      4
+    ]
+  },
+  {
+    "id": "46da9d73-7514-4999-bf52-23cca0c17d6b",
+    "validity": true,
+    "relevant_premises": [
+      3,
+      5
+    ]
+  },
+  {
+    "id": "535e39d9-13a2-4e0f-9372-6ae298d1b804",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "afad8eba-53d6-4db2-9861-1ad64adacab8",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "976acc17-6aa5-4b29-a03c-2b96a34e5698",
+    "validity": true,
+    "relevant_premises": [
+      2,
+      4
+    ]
+  },
+  {
+    "id": "8bd2f0cd-7f0d-4a07-b188-9a3ea3494762",
+    "validity": true,
+    "relevant_premises": [
+      3,
+      5
+    ]
+  },
+  {
+    "id": "0a7f2135-8209-4d7a-bbf6-17d60d8e1b54",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "a660d443-8da2-4227-ada2-06f01a2a3872",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "ac600889-82b7-4fb2-b894-20cd915fdfe7",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "d08924c4-ba38-4e24-b8fd-0007e916f288",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "fe982e42-1a13-4ee5-956a-d266aca56585",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "df7f86cb-9528-448f-908f-95446ad8e967",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "fd4d7bc9-94c4-47d1-a820-f46acee6668f",
+    "validity": false,
+    "relevant_premises": []
+  },
+  {
+    "id": "4ada5063-a2ec-4fd2-992e-5ecc3384f849",
+    "validity": true,
+    "relevant_premises": [
+      1,
+      4
+    ]
+  }
+]

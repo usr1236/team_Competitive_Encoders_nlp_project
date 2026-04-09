@@ -1,0 +1,14 @@
+{
+  "sufficiency": {
+    "avg_clean_ld": -4.78125,
+    "avg_top_only_ld": -11.125,
+    "recovery_fraction": 2.326797385620915,
+    "n_examples": 8
+  },
+  "necessity": {
+    "avg_clean_ld": -4.78125,
+    "avg_ablated_ld": -6.09375,
+    "destruction_fraction": -0.27450980392156854,
+    "n_examples": 8
+  }
+}
