@@ -10,19 +10,25 @@ import torch.nn.functional as F
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import numpy as np
 
-MODEL_NAME = "Qwen/Qwen2.5-7B-Instruct"
+ENTROPY_THRESHOLDS = [0.3, 0.4, 0.5, 0.6]
+
+MODEL_NAME = "Qwen/Qwen2.5-3B-Instruct"
 HF_TOKEN = os.getenv("HF_TOKEN", "")
 HF_HOME = os.getenv("HF_HOME", "")
 TRAIN_JSON = "train_data/subtask 1/train_data.json"
 TEST_JSON = "test_data/subtask 1/test_data_subtask_1.json"
 EVAL_SCRIPT = "evaluation_kit/task 1 & 3/evaluation_script.py"
-OUT_DIR = "results_novelty"
+OUT_DIR = "results_new_q3"
 
 SEED = 42
 MAX_LEN = 512
 MAX_STEER_EXAMPLES = 2400
-ALPHAS = [0,  -3, -2, -1, -0.5, 0.5, 1, 2, 3, 7, 10]
+ALPHAS = [0, -0.5, 0.5, 1, 2, 3, 7, 10, -3, -2, -1,]
 LAYER_FRACTION = 0.25
+# "Q3" = third quarter (layers 50%-75%), matches Valentino et al.
+# "Q4" = fourth quarter (layers 75%-100%), last quarter
+# "Q3Q4" = both (layers 50%-100%)
+LAYER_QUARTER = "Q3"
 NORMALIZE_VECTORS = False
 USE_BFLOAT16 = True
 USE_CHAT_TEMPLATE = True
@@ -32,32 +38,117 @@ NO_TEXT = " no"
 PROMPT_MODE = "icl"
 ICL_SHOTS = 4
 
-# "static" / "cast" / "kcast"
-# "layerwise"          = novelty 1: per-layer alpha optimization
-# "validity_cond"      = novelty 2: separate vectors for valid vs invalid
-# "entropy_gated"      = novelty 3: entropy-based alpha scaling
-# "structure_aware"    = novelty 5: syllogistic form aware contrastive pairs
-# "layerwise_entropy"  = novelty 1+3 combined
-MODE = "kcast"
-
-# ============================================================
-# MULTI_TOKEN_STEERING flag
-# ============================================================
-# False = single-token mode (Valentino et al. style):
-#   - Extract activations from LAST token only during steering data collection
-#   - Apply steering vector to LAST token only during inference
-# True  = multi-token mode (our extension):
-#   - Extract activations from ALL tokens during steering data collection
-#   - Apply steering vector to ALL tokens during inference
-MULTI_TOKEN_STEERING = False
+MODE = "entropy_gated"
 
 KCAST_K = 10
 ENTROPY_THRESHOLD = 0.5
 LAYERWISE_ALPHA_VALUES = [0.0, 0.5, 1.0, 2.0, 3.0, 5.0]
 LAYERWISE_MAX_COMBOS = 5000
 
+MULTI_TOKEN_STEER = True
+
+# "dynamic" = use prompt length to find correct position (safe for any label)
+# "hardcoded" = use -2 (only safe when label is exactly 1 token)
+SINGLE_TOKEN_MODE = "hardcoded"
+
+USE_CACHED_STEERING = True
+
+SAVE_OUTPUTS = False
+SAVE_STEERING_DATA = True
+
 if HF_HOME:
     os.environ["HF_HOME"] = HF_HOME
+
+
+def _build_steering_config(target_layers):
+    return {
+        "model_name": MODEL_NAME,
+        "train_json": TRAIN_JSON,
+        "prompt_mode": PROMPT_MODE,
+        "icl_shots": ICL_SHOTS if PROMPT_MODE == "icl" else 0,
+        "use_chat_template": USE_CHAT_TEMPLATE,
+        "layer_fraction": LAYER_FRACTION,
+        "layer_quarter": LAYER_QUARTER,
+        "max_steer_examples": MAX_STEER_EXAMPLES,
+        "normalize_vectors": NORMALIZE_VECTORS,
+        "seed": SEED,
+        "yes_text": YES_TEXT,
+        "no_text": NO_TEXT,
+        "pool_tag": "struct" if MODE == "structure_aware" else "std",
+        "target_layers": sorted(target_layers),
+    }
+
+
+def get_steering_cache_path():
+    model_tag = MODEL_NAME.replace("/", "_").replace("-", "_")
+    prompt_tag = f"{PROMPT_MODE}{ICL_SHOTS}" if PROMPT_MODE == "icl" else PROMPT_MODE
+    chat_tag = "chat" if USE_CHAT_TEMPLATE else "raw"
+    pool_tag = "struct" if MODE == "structure_aware" else "std"
+    norm_tag = "norm" if NORMALIZE_VECTORS else "nonorm"
+    train_tag = os.path.basename(os.path.dirname(TRAIN_JSON)).replace(" ", "_")
+    label_tag = f"{YES_TEXT.strip()}_{NO_TEXT.strip()}"
+
+    fname = (
+        f"steering_"
+        f"{model_tag}_"
+        f"{prompt_tag}_{chat_tag}_"
+        f"{train_tag}_"
+        f"{LAYER_QUARTER}_frac{LAYER_FRACTION}_"
+        f"n{MAX_STEER_EXAMPLES}_"
+        f"s{SEED}_"
+        f"{label_tag}_"
+        f"{pool_tag}_{norm_tag}.pt"
+    )
+    return os.path.join(OUT_DIR, fname)
+
+
+def load_or_compute_steering(model, tokenizer, train_items, target_layers):
+    cache_path = get_steering_cache_path()
+    current_config = _build_steering_config(target_layers)
+
+    if USE_CACHED_STEERING and os.path.exists(cache_path):
+        print(f"Loading cached steering data: {cache_path}")
+        payload = torch.load(cache_path, map_location="cpu")
+
+        if "config" in payload and "data" in payload:
+            cached_config = payload["config"]
+            steering_data = payload["data"]
+
+            mismatches = []
+            for key in current_config:
+                cached_val = cached_config.get(key)
+                current_val = current_config[key]
+                if cached_val != current_val:
+                    mismatches.append(f"  {key}: cached={cached_val} vs current={current_val}")
+
+            if mismatches:
+                print(f"  Config mismatch ({len(mismatches)} fields):")
+                for m in mismatches:
+                    print(m)
+                print(f"  Recomputing...")
+            else:
+                print(f"  Config validated. Layers: {sorted(steering_data['deltas'].keys())}")
+                return steering_data
+        else:
+            cached_layers = set(payload.get("deltas", {}).keys())
+            expected_layers = set(target_layers)
+            if cached_layers == expected_layers:
+                print(f"  Legacy cache (no config metadata). Layers match, using it.")
+                print(f"  Warning: cannot verify other config fields. Set USE_CACHED_STEERING=False to force recompute.")
+                return payload
+            else:
+                print(f"  Legacy cache, layer mismatch. Recomputing...")
+
+    print(f"Computing steering data...")
+    steering_data = compute_steering_data(model, tokenizer, train_items, target_layers)
+
+    if SAVE_STEERING_DATA:
+        os.makedirs(os.path.dirname(cache_path) or ".", exist_ok=True)
+        payload = {"config": current_config, "data": steering_data}
+        torch.save(payload, cache_path)
+        print(f"Saved steering data: {cache_path}")
+
+    return steering_data
 
 
 def set_seed(seed):
@@ -72,12 +163,18 @@ def load_json(path):
         return json.load(f)
 
 
-def save_json(obj, path):
+def _write_json(obj, path):
     d = os.path.dirname(path)
     if d:
         os.makedirs(d, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(obj, f, indent=2, ensure_ascii=False)
+
+
+def save_json(obj, path):
+    if not SAVE_OUTPUTS:
+        return
+    _write_json(obj, path)
 
 
 def run_official_eval(eval_script_path, ref_path, pred_path, out_path):
@@ -98,7 +195,17 @@ def get_layers(model):
     raise ValueError("Unsupported model architecture")
 
 
-def get_target_layers(total, fraction):
+def get_target_layers(total, fraction, quarter=None):
+    if quarter is not None:
+        q_size = total // 4
+        if quarter == "Q3":
+            return list(range(2 * q_size, 3 * q_size))
+        elif quarter == "Q4":
+            return list(range(3 * q_size, total))
+        elif quarter == "Q3Q4":
+            return list(range(2 * q_size, total))
+        else:
+            raise ValueError(f"Unknown quarter: {quarter}")
     start = int(total * (1.0 - fraction))
     return list(range(start, total))
 
@@ -120,7 +227,12 @@ def build_prompt(tokenizer, train_data, syllogism):
         chosen = build_icl_examples(train_data, ICL_SHOTS, SEED)
         if USE_CHAT_TEMPLATE:
             messages = [
-                {"role": "system", "content": "You are a strict formal logic reasoner. Decide only whether the conclusion logically follows from the premises. Ignore plausibility and world knowledge. Reply with only yes or no."}
+                {"role": "system", "content": (
+                    "You are a strict formal logic reasoner. "
+                    "Decide only whether the conclusion logically follows from the premises. "
+                    "Ignore plausibility and world knowledge. "
+                    "Reply with only yes or no."
+                )}
             ]
             for ex in chosen:
                 ans = "yes" if ex["validity"] else "no"
@@ -142,7 +254,12 @@ def build_prompt(tokenizer, train_data, syllogism):
 
     if USE_CHAT_TEMPLATE:
         messages = [
-            {"role": "system", "content": "You are a strict formal logic reasoner. Decide only whether the conclusion logically follows from the premises. Ignore plausibility and world knowledge. Reply with only yes or no."},
+            {"role": "system", "content": (
+                "You are a strict formal logic reasoner. "
+                "Decide only whether the conclusion logically follows from the premises. "
+                "Ignore plausibility and world knowledge. "
+                "Reply with only yes or no."
+            )},
             {"role": "user", "content": f"Argument:\n{syllogism}\n\nAnswer yes or no."}
         ]
         return tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
@@ -157,8 +274,11 @@ def build_prompt(tokenizer, train_data, syllogism):
 
 def score_label(model, tokenizer, prompt, label_text, max_len):
     full = prompt + label_text
-    full_ids = tokenizer(full, return_tensors="pt", add_special_tokens=False, truncation=True, max_length=max_len).input_ids.to(model.device)
-    prompt_ids = tokenizer(prompt, return_tensors="pt", add_special_tokens=False, truncation=True, max_length=max_len).input_ids.to(model.device)
+    full_ids = tokenizer(full, return_tensors="pt", add_special_tokens=False,
+                         truncation=True, max_length=max_len).input_ids.to(model.device)
+    prompt_ids = tokenizer(prompt, return_tensors="pt", add_special_tokens=False,
+                           truncation=True, max_length=max_len).input_ids.to(model.device)
+    set_prompt_len(tokenizer, prompt, max_len)
     with torch.no_grad():
         out = model(full_ids, use_cache=False)
         logits = out.logits[:, :-1, :]
@@ -184,32 +304,13 @@ def get_prediction_entropy(model, tokenizer, prompt, max_len):
     return entropy / max_entropy, y >= n
 
 
-# ============================================================
-# Activation extraction — respects MULTI_TOKEN_STEERING
-# ============================================================
-
 def get_all_layer_hidden(model, tokenizer, text, target_layers, max_len):
-    """
-    Extract hidden states for steering data collection.
-    
-    MULTI_TOKEN_STEERING=False: returns last-token vector per layer  (shape: [hidden_dim])
-    MULTI_TOKEN_STEERING=True:  returns all-token matrix per layer   (shape: [seq_len, hidden_dim])
-    """
-    enc = tokenizer(text, return_tensors="pt", truncation=True, max_length=max_len, add_special_tokens=False)
+    enc = tokenizer(text, return_tensors="pt", truncation=True,
+                    max_length=max_len, add_special_tokens=False)
     enc = {k: v.to(model.device) for k, v in enc.items()}
     with torch.no_grad():
         out = model(**enc, output_hidden_states=True, use_cache=False)
-
-    result = {}
-    for l in target_layers:
-        hidden = out.hidden_states[l + 1]  # [1, seq_len, hidden_dim]
-        if MULTI_TOKEN_STEERING:
-            # All tokens: [seq_len, hidden_dim]
-            result[l] = hidden[0, :, :].float().cpu()
-        else:
-            # Last token only: [hidden_dim]
-            result[l] = hidden[0, -1, :].float().cpu()
-    return result
+    return {l: out.hidden_states[l + 1][0, -1, :].float().cpu() for l in target_layers}
 
 
 def balanced_by_validity(data, n, seed):
@@ -228,25 +329,20 @@ def cosine_sim(a, b):
     return torch.dot(a, b) / (a.norm() * b.norm() + 1e-10)
 
 
-def project_onto(v, u):
-    return (torch.dot(v, u) / (torch.dot(u, u) + 1e-10)) * u
-
-
-# ============================================================
-# NOVELTY 5: Structure-aware contrastive pairs
-# ============================================================
-
 def extract_syllogistic_form(text):
     text_lower = text.lower()
-    quantifiers = ["not all", "no", "all", "some", "every", "there are no", "it is not the case that all",
-                   "it is not the case that every", "there exist some", "every single", "it is certain that no",
-                   "it is certain that every", "it is also true that every", "it is known that some",
-                   "it is known that every", "it is known that no"]
+    quantifiers = [
+        "not all", "no", "all", "some", "every", "there are no",
+        "it is not the case that all", "it is not the case that every",
+        "there exist some", "every single", "it is certain that no",
+        "it is certain that every", "it is also true that every",
+        "it is known that some", "it is known that every", "it is known that no"
+    ]
     found = []
     for q in sorted(quantifiers, key=len, reverse=True):
         if q in text_lower:
             found.append(q)
-    if "therefore" in text_lower or "consequently" in text_lower or "it follows" in text_lower or "this has led" in text_lower:
+    if any(marker in text_lower for marker in ["therefore", "consequently", "it follows", "this has led"]):
         found.append("CONCLUSION_MARKER")
     neg_count = text_lower.count("not") + text_lower.count("no ")
     form_key = "|".join(sorted(found)) + f"|neg{neg_count}"
@@ -257,8 +353,10 @@ def build_structure_aware_pool(train_items, max_examples, seed):
     from collections import defaultdict
     rng = random.Random(seed)
 
-    groups = defaultdict(lambda: {"valid_plausible": [], "valid_implausible": [],
-                                   "invalid_plausible": [], "invalid_implausible": []})
+    groups = defaultdict(lambda: {
+        "valid_plausible": [], "valid_implausible": [],
+        "invalid_plausible": [], "invalid_implausible": []
+    })
     for item in train_items:
         form = extract_syllogistic_form(item["syllogism"])
         v = "valid" if item["validity"] else "invalid"
@@ -272,10 +370,9 @@ def build_structure_aware_pool(train_items, max_examples, seed):
         vi = buckets["valid_implausible"]
         ip = buckets["invalid_plausible"]
         ii = buckets["invalid_implausible"]
-        rng.shuffle(vp)
-        rng.shuffle(vi)
-        rng.shuffle(ip)
-        rng.shuffle(ii)
+        rng.shuffle(vp); rng.shuffle(vi)
+        rng.shuffle(ip); rng.shuffle(ii)
+
         n_valid = min(len(vp), len(vi))
         for j in range(n_valid):
             paired.append((vp[j], vi[j]))
@@ -300,39 +397,6 @@ def build_structure_aware_pool(train_items, max_examples, seed):
     return pool
 
 
-# ============================================================
-# Helper: aggregate multi-token activations for mean vectors
-# ============================================================
-
-def _mean_activations(act_list):
-    """
-    Compute mean activation across a list of activation tensors.
-    
-    For single-token mode: each tensor is [hidden_dim], stack & mean over dim=0.
-    For multi-token mode:  each tensor is [seq_len_i, hidden_dim], 
-                           we mean each to [hidden_dim] first, then mean across examples.
-    """
-    if act_list[0].dim() == 1:
-        # Single-token: [hidden_dim] each
-        return torch.stack(act_list).mean(dim=0)
-    else:
-        # Multi-token: [seq_len_i, hidden_dim] each -> mean over tokens first
-        per_example_means = [a.mean(dim=0) for a in act_list]
-        return torch.stack(per_example_means).mean(dim=0)
-
-
-def _get_last_token_vec(act):
-    """Extract last-token vector for kNN/condition checks regardless of mode."""
-    if act.dim() == 1:
-        return act  # already last-token
-    else:
-        return act[-1, :]  # last token from multi-token
-
-
-# ============================================================
-# Core steering data computation
-# ============================================================
-
 def compute_steering_data(model, tokenizer, train_items, target_layers):
     if MODE == "structure_aware":
         pool = build_structure_aware_pool(train_items, MAX_STEER_EXAMPLES, SEED)
@@ -344,14 +408,12 @@ def compute_steering_data(model, tokenizer, train_items, target_layers):
         random.Random(SEED).shuffle(pool)
 
     print(f"Steering pool: {len(pool)} examples")
-    print(f"Multi-token steering: {MULTI_TOKEN_STEERING}")
 
     correct_acts = {l: [] for l in target_layers}
     wrong_acts = {l: [] for l in target_layers}
     valid_acts = {l: [] for l in target_layers}
     invalid_acts = {l: [] for l in target_layers}
     all_acts_with_validity = {l: [] for l in target_layers}
-
     valid_correct_acts = {l: [] for l in target_layers}
     valid_wrong_acts = {l: [] for l in target_layers}
     invalid_correct_acts = {l: [] for l in target_layers}
@@ -373,78 +435,69 @@ def compute_steering_data(model, tokenizer, train_items, target_layers):
             n_wrong += 1
 
         for l in target_layers:
-            h = hiddens[l]  # [hidden_dim] or [seq_len, hidden_dim]
+            h = hiddens[l]
             if is_correct:
                 correct_acts[l].append(h)
             else:
                 wrong_acts[l].append(h)
-            
-            # For kNN store, always use last-token vector
-            h_last = _get_last_token_vec(h)
-            
             if gold:
                 valid_acts[l].append(h)
+            else:
+                invalid_acts[l].append(h)
+            all_acts_with_validity[l].append((h, 1 if gold else -1))
+            if gold:
                 if is_correct:
                     valid_correct_acts[l].append(h)
                 else:
                     valid_wrong_acts[l].append(h)
             else:
-                invalid_acts[l].append(h)
                 if is_correct:
                     invalid_correct_acts[l].append(h)
                 else:
                     invalid_wrong_acts[l].append(h)
-            all_acts_with_validity[l].append((h_last, 1 if gold else -1))
 
         if (i + 1) % 100 == 0:
             print(f"  {i + 1}/{len(pool)} (correct={n_correct}, wrong={n_wrong})")
 
     print(f"  Total correct={n_correct}, wrong={n_wrong}")
 
-    # Compute deltas using _mean_activations (handles both single/multi token)
     deltas = {}
     for l in target_layers:
         if len(correct_acts[l]) == 0 or len(wrong_acts[l]) == 0:
             raise ValueError(f"Layer {l}: need both correct and wrong examples")
-        mu_plus = _mean_activations(correct_acts[l])
-        mu_minus = _mean_activations(wrong_acts[l])
+        mu_plus = torch.stack(correct_acts[l]).mean(dim=0)
+        mu_minus = torch.stack(wrong_acts[l]).mean(dim=0)
         delta = mu_plus - mu_minus
         if NORMALIZE_VECTORS:
             delta = delta / delta.norm()
         deltas[l] = delta
         print(f"  Layer {l}: ||delta|| = {delta.norm():.4f}")
 
+    cond_valid = {}
+    cond_invalid = {}
+    for l in target_layers:
+        cond_valid[l] = torch.stack(valid_acts[l]).mean(dim=0)
+        cond_invalid[l] = torch.stack(invalid_acts[l]).mean(dim=0)
+
     valid_deltas = {}
     invalid_deltas = {}
     for l in target_layers:
         if len(valid_correct_acts[l]) > 0 and len(valid_wrong_acts[l]) > 0:
-            vd = _mean_activations(valid_correct_acts[l]) - _mean_activations(valid_wrong_acts[l])
+            vd = torch.stack(valid_correct_acts[l]).mean(dim=0) - torch.stack(valid_wrong_acts[l]).mean(dim=0)
             if NORMALIZE_VECTORS:
                 vd = vd / vd.norm()
             valid_deltas[l] = vd
         else:
             valid_deltas[l] = deltas[l]
-
         if len(invalid_correct_acts[l]) > 0 and len(invalid_wrong_acts[l]) > 0:
-            ivd = _mean_activations(invalid_correct_acts[l]) - _mean_activations(invalid_wrong_acts[l])
+            ivd = torch.stack(invalid_correct_acts[l]).mean(dim=0) - torch.stack(invalid_wrong_acts[l]).mean(dim=0)
             if NORMALIZE_VECTORS:
                 ivd = ivd / ivd.norm()
             invalid_deltas[l] = ivd
         else:
             invalid_deltas[l] = deltas[l]
-
         print(f"  Layer {l}: ||valid_delta|| = {valid_deltas[l].norm():.4f}, ||invalid_delta|| = {invalid_deltas[l].norm():.4f}")
 
-    # Condition vectors (for CAST): always use last-token means
-    cond_valid = {}
-    cond_invalid = {}
-    for l in target_layers:
-        valid_last = [_get_last_token_vec(a) for a in valid_acts[l]]
-        invalid_last = [_get_last_token_vec(a) for a in invalid_acts[l]]
-        cond_valid[l] = torch.stack(valid_last).mean(dim=0)
-        cond_invalid[l] = torch.stack(invalid_last).mean(dim=0)
-
-    # kNN store: always last-token vectors
     knn_store = {}
     for l in target_layers:
         vecs = torch.stack([item[0] for item in all_acts_with_validity[l]])
@@ -461,45 +514,51 @@ def compute_steering_data(model, tokenizer, train_items, target_layers):
     }
 
 
-# ============================================================
-# Hooks — all respect MULTI_TOKEN_STEERING
-# ============================================================
+_steer_state = {"prompt_len": None}
+
+
+def set_prompt_len(tokenizer, prompt, max_len):
+    ids = tokenizer(prompt, return_tensors="pt", add_special_tokens=False,
+                    truncation=True, max_length=max_len).input_ids
+    _steer_state["prompt_len"] = ids.shape[1]
+
+
+def apply_steering(x, delta, alpha):
+    d = delta.to(x.device, x.dtype)
+    if MULTI_TOKEN_STEER:
+        return x + alpha * d.view(1, 1, -1)
+    else:
+        x = x.clone()
+        if SINGLE_TOKEN_MODE == "hardcoded":
+            x[:, -2, :] = x[:, -2, :] + alpha * d.view(1, -1)
+        else:
+            pos = _steer_state.get("prompt_len")
+            if pos is None or pos <= 0:
+                pos = x.shape[1] - 1
+            else:
+                pos = min(pos - 1, x.shape[1] - 1)
+            x[:, pos, :] = x[:, pos, :] + alpha * d.view(1, -1)
+        return x
+
 
 class StaticHook:
-    def __init__(self, delta, alpha, multi_token):
+    def __init__(self, delta, alpha):
         self.delta = delta
         self.alpha = alpha
-        self.multi_token = multi_token
 
     def __call__(self, module, inputs, output):
         if isinstance(output, tuple):
             x = output[0]
-            rest = output[1:]
-        else:
-            x = output
-            rest = None
-
-        d = self.delta.to(x.device, x.dtype)
-        if self.multi_token:
-            # Apply to ALL tokens: d is [hidden_dim] -> [1, 1, hidden_dim]
-            x = x + self.alpha * d.view(1, 1, -1)
-        else:
-            # Apply to LAST token only
-            x = x.clone()
-            x[:, -1, :] = x[:, -1, :] + self.alpha * d
-
-        if rest is None:
-            return x
-        return (x,) + rest
+            return (apply_steering(x, self.delta, self.alpha),) + output[1:]
+        return apply_steering(output, self.delta, self.alpha)
 
 
 class CASTHook:
-    def __init__(self, delta, alpha, psi_valid, psi_invalid, multi_token):
+    def __init__(self, delta, alpha, psi_valid, psi_invalid):
         self.delta = delta
         self.alpha = alpha
         self.psi_valid = psi_valid
         self.psi_invalid = psi_invalid
-        self.multi_token = multi_token
 
     def __call__(self, module, inputs, output):
         if isinstance(output, tuple):
@@ -508,38 +567,25 @@ class CASTHook:
         else:
             x = output
             rest = None
-
-        # Condition check: always last token
         h = x[0, -1, :].float().cpu()
-        proj_valid = project_onto(h, self.psi_valid)
-        proj_invalid = project_onto(h, self.psi_invalid)
+        proj_valid = (torch.dot(h, self.psi_valid) / (torch.dot(self.psi_valid, self.psi_valid) + 1e-10)) * self.psi_valid
+        proj_invalid = (torch.dot(h, self.psi_invalid) / (torch.dot(self.psi_invalid, self.psi_invalid) + 1e-10)) * self.psi_invalid
         sim_valid = cosine_sim(h, proj_valid).item()
         sim_invalid = cosine_sim(h, proj_invalid).item()
-        if sim_valid > sim_invalid:
-            effective_alpha = -self.alpha
-        else:
-            effective_alpha = self.alpha
-
-        d = self.delta.to(x.device, x.dtype)
-        if self.multi_token:
-            x = x + effective_alpha * d.view(1, 1, -1)
-        else:
-            x = x.clone()
-            x[:, -1, :] = x[:, -1, :] + effective_alpha * d
-
+        effective_alpha = -self.alpha if sim_valid > sim_invalid else self.alpha
+        x = apply_steering(x, self.delta, effective_alpha)
         if rest is None:
             return x
         return (x,) + rest
 
 
 class KCASTHook:
-    def __init__(self, delta, alpha, knn_vecs, knn_labels, k, multi_token):
+    def __init__(self, delta, alpha, knn_vecs, knn_labels, k):
         self.delta = delta
         self.alpha = alpha
         self.knn_vecs = knn_vecs
         self.knn_labels = knn_labels
         self.k = k
-        self.multi_token = multi_token
 
     def __call__(self, module, inputs, output):
         if isinstance(output, tuple):
@@ -548,8 +594,6 @@ class KCASTHook:
         else:
             x = output
             rest = None
-
-        # Condition check: always last token
         h = x[0, -1, :].float().cpu()
         sims = F.cosine_similarity(h.unsqueeze(0), self.knn_vecs, dim=1)
         topk = torch.topk(sims, self.k)
@@ -557,27 +601,19 @@ class KCASTHook:
         vote = neighbor_labels.sum().item()
         y_hat = 1.0 if vote > 0 else -1.0
         effective_alpha = -y_hat * self.alpha
-
-        d = self.delta.to(x.device, x.dtype)
-        if self.multi_token:
-            x = x + effective_alpha * d.view(1, 1, -1)
-        else:
-            x = x.clone()
-            x[:, -1, :] = x[:, -1, :] + effective_alpha * d
-
+        x = apply_steering(x, self.delta, effective_alpha)
         if rest is None:
             return x
         return (x,) + rest
 
 
 class ValidityConditionedHook:
-    def __init__(self, valid_delta, invalid_delta, alpha, psi_valid, psi_invalid, multi_token):
+    def __init__(self, valid_delta, invalid_delta, alpha, psi_valid, psi_invalid):
         self.valid_delta = valid_delta
         self.invalid_delta = invalid_delta
         self.alpha = alpha
         self.psi_valid = psi_valid
         self.psi_invalid = psi_invalid
-        self.multi_token = multi_token
 
     def __call__(self, module, inputs, output):
         if isinstance(output, tuple):
@@ -586,11 +622,9 @@ class ValidityConditionedHook:
         else:
             x = output
             rest = None
-
-        # Condition check: always last token
         h = x[0, -1, :].float().cpu()
-        proj_valid = project_onto(h, self.psi_valid)
-        proj_invalid = project_onto(h, self.psi_invalid)
+        proj_valid = (torch.dot(h, self.psi_valid) / (torch.dot(self.psi_valid, self.psi_valid) + 1e-10)) * self.psi_valid
+        proj_invalid = (torch.dot(h, self.psi_invalid) / (torch.dot(self.psi_invalid, self.psi_invalid) + 1e-10)) * self.psi_invalid
         sim_valid = cosine_sim(h, proj_valid).item()
         sim_invalid = cosine_sim(h, proj_invalid).item()
         if sim_valid > sim_invalid:
@@ -599,28 +633,20 @@ class ValidityConditionedHook:
         else:
             delta = self.invalid_delta
             effective_alpha = self.alpha
-
-        d = delta.to(x.device, x.dtype)
-        if self.multi_token:
-            x = x + effective_alpha * d.view(1, 1, -1)
-        else:
-            x = x.clone()
-            x[:, -1, :] = x[:, -1, :] + effective_alpha * d
-
+        x = apply_steering(x, delta, effective_alpha)
         if rest is None:
             return x
         return (x,) + rest
 
 
 class ValidityConditionedKCASTHook:
-    def __init__(self, valid_delta, invalid_delta, alpha, knn_vecs, knn_labels, k, multi_token):
+    def __init__(self, valid_delta, invalid_delta, alpha, knn_vecs, knn_labels, k):
         self.valid_delta = valid_delta
         self.invalid_delta = invalid_delta
         self.alpha = alpha
         self.knn_vecs = knn_vecs
         self.knn_labels = knn_labels
         self.k = k
-        self.multi_token = multi_token
 
     def __call__(self, module, inputs, output):
         if isinstance(output, tuple):
@@ -629,8 +655,6 @@ class ValidityConditionedKCASTHook:
         else:
             x = output
             rest = None
-
-        # Condition check: always last token
         h = x[0, -1, :].float().cpu()
         sims = F.cosine_similarity(h.unsqueeze(0), self.knn_vecs, dim=1)
         topk = torch.topk(sims, self.k)
@@ -642,14 +666,7 @@ class ValidityConditionedKCASTHook:
         else:
             delta = self.invalid_delta
         effective_alpha = -y_hat * self.alpha
-
-        d = delta.to(x.device, x.dtype)
-        if self.multi_token:
-            x = x + effective_alpha * d.view(1, 1, -1)
-        else:
-            x = x.clone()
-            x[:, -1, :] = x[:, -1, :] + effective_alpha * d
-
+        x = apply_steering(x, delta, effective_alpha)
         if rest is None:
             return x
         return (x,) + rest
@@ -663,23 +680,22 @@ def register_hooks(layers, steering_data, alpha, mode, layer_alphas=None):
     cond_valid = steering_data["cond_valid"]
     cond_invalid = steering_data["cond_invalid"]
     knn_store = steering_data["knn_store"]
-    mt = MULTI_TOKEN_STEERING
 
     for layer_idx in deltas.keys():
         a = layer_alphas[layer_idx] if layer_alphas else alpha
 
         if mode == "static":
-            hook = StaticHook(deltas[layer_idx], a, mt)
+            hook = StaticHook(deltas[layer_idx], a)
         elif mode == "cast":
-            hook = CASTHook(deltas[layer_idx], a, cond_valid[layer_idx], cond_invalid[layer_idx], mt)
+            hook = CASTHook(deltas[layer_idx], a, cond_valid[layer_idx], cond_invalid[layer_idx])
         elif mode == "kcast":
-            hook = KCASTHook(deltas[layer_idx], a, knn_store[layer_idx]["vecs"], knn_store[layer_idx]["labels"], KCAST_K, mt)
+            hook = KCASTHook(deltas[layer_idx], a, knn_store[layer_idx]["vecs"], knn_store[layer_idx]["labels"], KCAST_K)
         elif mode == "validity_cond":
-            hook = ValidityConditionedHook(valid_deltas[layer_idx], invalid_deltas[layer_idx], a, cond_valid[layer_idx], cond_invalid[layer_idx], mt)
+            hook = ValidityConditionedHook(valid_deltas[layer_idx], invalid_deltas[layer_idx], a, cond_valid[layer_idx], cond_invalid[layer_idx])
         elif mode == "validity_cond_kcast":
-            hook = ValidityConditionedKCASTHook(valid_deltas[layer_idx], invalid_deltas[layer_idx], a, knn_store[layer_idx]["vecs"], knn_store[layer_idx]["labels"], KCAST_K, mt)
+            hook = ValidityConditionedKCASTHook(valid_deltas[layer_idx], invalid_deltas[layer_idx], a, knn_store[layer_idx]["vecs"], knn_store[layer_idx]["labels"], KCAST_K)
         elif mode in ("layerwise", "layerwise_entropy", "entropy_gated", "structure_aware"):
-            hook = StaticHook(deltas[layer_idx], a, mt)
+            hook = StaticHook(deltas[layer_idx], a)
         else:
             raise ValueError(f"Unknown mode: {mode}")
 
@@ -692,20 +708,16 @@ def remove_hooks(handles):
         h.remove()
 
 
-# ============================================================
-# Prediction functions
-# ============================================================
-
 @torch.no_grad()
-def predict_dataset(model, tokenizer, train_items, eval_items, steering_data, alpha, mode, layer_alphas=None):
+def predict_dataset(model, tokenizer, train_items, eval_items, steering_data, alpha, mode, layer_alphas=None, threshold=None):
     layers = get_layers(model)
-
-    if mode == "entropy_gated" or mode == "layerwise_entropy":
-        return predict_entropy_gated(model, tokenizer, train_items, eval_items, steering_data, alpha, layer_alphas)
+    if mode in ("entropy_gated", "layerwise_entropy"):
+        return predict_entropy_gated(model, tokenizer, train_items, eval_items, steering_data, alpha, layer_alphas, threshold=threshold)
 
     handles = []
-    if alpha != 0:
+    if alpha != 0 or (layer_alphas is not None):
         handles = register_hooks(layers, steering_data, alpha, mode, layer_alphas)
+
     preds = []
     try:
         for i, ex in enumerate(eval_items):
@@ -720,56 +732,69 @@ def predict_dataset(model, tokenizer, train_items, eval_items, steering_data, al
 
 
 @torch.no_grad()
-def predict_entropy_gated(model, tokenizer, train_items, eval_items, steering_data, alpha_base, layer_alphas=None):
+def predict_entropy_gated(model, tokenizer, train_items, eval_items, steering_data, alpha_base, layer_alphas=None, threshold=None):
+    """
+    Entropy-gated KCAST: direction comes from kNN vote (same as KCASTHook),
+    magnitude is scaled by prediction uncertainty measured on the unsteered model.
+    """
+    if threshold is None:
+        threshold = ENTROPY_THRESHOLD
+
     layers = get_layers(model)
     deltas = steering_data["deltas"]
-    mt = MULTI_TOKEN_STEERING
+    knn_store = steering_data["knn_store"]
     preds = []
-
     for i, ex in enumerate(eval_items):
         prompt = build_prompt(tokenizer, train_items, ex["syllogism"])
+
+        # 1. Measure uncertainty on the UNSTEERED model.
         norm_entropy, _ = get_prediction_entropy(model, tokenizer, prompt, MAX_LEN)
 
-        if norm_entropy < ENTROPY_THRESHOLD:
-            scale = (norm_entropy / ENTROPY_THRESHOLD) * 0.5
+        # 2. Scale in [0, 1]. Below threshold = no steering; above = linear ramp.
+        if norm_entropy < threshold:
+            scale = 0.0
         else:
-            scale = norm_entropy
+            scale = (norm_entropy - threshold) / (1.0 - threshold + 1e-10)
+            scale = max(0.0, min(1.0, scale))
 
         handles = []
-        for layer_idx, delta in deltas.items():
-            base_a = layer_alphas[layer_idx] if layer_alphas else alpha_base
-            a = base_a * scale
-            handles.append(layers[layer_idx].register_forward_hook(StaticHook(delta, a, mt)))
+        try:
+            # 3. Register KCAST hooks with entropy-scaled alpha.
+            if scale > 0:
+                for layer_idx in deltas.keys():
+                    base_a = layer_alphas[layer_idx] if layer_alphas is not None else alpha_base
+                    a = base_a * scale
+                    hook = KCASTHook(
+                        deltas[layer_idx],
+                        a,
+                        knn_store[layer_idx]["vecs"],
+                        knn_store[layer_idx]["labels"],
+                        KCAST_K,
+                    )
+                    handles.append(layers[layer_idx].register_forward_hook(hook))
 
-        pred = predict_validity(model, tokenizer, prompt, MAX_LEN)
-        remove_hooks(handles)
+            # 4. Run the steered prediction.
+            pred = predict_validity(model, tokenizer, prompt, MAX_LEN)
+        finally:
+            remove_hooks(handles)
 
         preds.append({"id": ex["id"], "validity": bool(pred)})
         if (i + 1) % 50 == 0:
-            print(f"  {i + 1}/{len(eval_items)} (entropy_scale={scale:.3f})")
-
+            print(f"  {i + 1}/{len(eval_items)} (entropy={norm_entropy:.3f} scale={scale:.3f})")
     return preds
 
-
-# ============================================================
-# Novelty 1: Layer-wise alpha optimization
-# ============================================================
 
 def optimize_layerwise_alphas(model, tokenizer, train_items, eval_items, steering_data, ref_path):
     target_layers = sorted(steering_data["deltas"].keys())
     n_layers = len(target_layers)
     alpha_vals = LAYERWISE_ALPHA_VALUES
-
     total_combos = len(alpha_vals) ** n_layers
     print(f"Layer-wise optimization: {n_layers} layers x {len(alpha_vals)} values = {total_combos} combos")
 
     if total_combos > LAYERWISE_MAX_COMBOS:
         print(f"Too many combos, using random search ({LAYERWISE_MAX_COMBOS} samples)")
         rng = random.Random(SEED)
-        combos = []
-        for _ in range(LAYERWISE_MAX_COMBOS):
-            combo = tuple(rng.choice(alpha_vals) for _ in range(n_layers))
-            combos.append(combo)
+        combos = [tuple(rng.choice(alpha_vals) for _ in range(n_layers)) for _ in range(LAYERWISE_MAX_COMBOS)]
     else:
         combos = list(product(alpha_vals, repeat=n_layers))
 
@@ -781,16 +806,14 @@ def optimize_layerwise_alphas(model, tokenizer, train_items, eval_items, steerin
         layer_alphas = {l: a for l, a in zip(target_layers, combo)}
         preds = predict_dataset(model, tokenizer, train_items, eval_items, steering_data, 0, "layerwise", layer_alphas)
         pred_path = os.path.join(OUT_DIR, "tmp_layerwise_preds.json")
-        save_json(preds, pred_path)
+        _write_json(preds, pred_path)
         result = run_official_eval(EVAL_SCRIPT, ref_path, pred_path, os.path.join(OUT_DIR, "tmp_layerwise_eval.json"))
         score = result["combined_score"]
-
         if score > best_score:
             best_score = score
             best_combo = layer_alphas
             best_result = result
             print(f"  [{ci+1}/{len(combos)}] New best: {layer_alphas} -> Score={score:.4f} ACC={result['accuracy']:.2f} TCE={result['content_effect']:.4f}")
-
         if (ci + 1) % 100 == 0:
             print(f"  [{ci+1}/{len(combos)}] best so far: {best_score:.4f}")
 
@@ -798,10 +821,6 @@ def optimize_layerwise_alphas(model, tokenizer, train_items, eval_items, steerin
     print(f"Best score: {best_score:.4f}")
     return best_combo, best_result
 
-
-# ============================================================
-# Evaluation helpers
-# ============================================================
 
 def print_subgroup_accuracy(items, preds):
     pred_map = {p["id"]: p["validity"] for p in preds}
@@ -820,22 +839,21 @@ def print_subgroup_accuracy(items, preds):
         print(f"  {key:25s}: {acc:6.2f}%  ({vals['correct']}/{vals['total']})")
 
 
-# ============================================================
-# Main
-# ============================================================
-
 def main():
     set_seed(SEED)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Device: {device}")
     print(f"Model: {MODEL_NAME}")
     print(f"Mode: {MODE}")
-    print(f"Multi-token steering: {MULTI_TOKEN_STEERING}")
     print(f"Prompt: {PROMPT_MODE}" + (f" ({ICL_SHOTS} shots)" if PROMPT_MODE == "icl" else ""))
     print(f"Alphas: {ALPHAS}")
+    print(f"Multi-token steering: {MULTI_TOKEN_STEER}")
+    print(f"Use cached steering: {USE_CACHED_STEERING}")
     if MODE == "kcast":
         print(f"K-CAST K={KCAST_K}")
-    if MODE in ("entropy_gated", "layerwise_entropy"):
+    if MODE == "entropy_gated":
+        print(f"Entropy thresholds to sweep: {ENTROPY_THRESHOLDS}")
+    elif MODE == "layerwise_entropy":
         print(f"Entropy threshold: {ENTROPY_THRESHOLD}")
     os.makedirs(OUT_DIR, exist_ok=True)
 
@@ -844,8 +862,13 @@ def main():
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    dtype = torch.bfloat16 if USE_BFLOAT16 and device == "cuda" else (torch.float16 if device == "cuda" else torch.float32)
-    model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, token=token, torch_dtype=dtype, device_map="auto" if device == "cuda" else None)
+    dtype = torch.bfloat16 if USE_BFLOAT16 and device == "cuda" else (
+        torch.float16 if device == "cuda" else torch.float32
+    )
+    model = AutoModelForCausalLM.from_pretrained(
+        MODEL_NAME, token=token, torch_dtype=dtype,
+        device_map="auto" if device == "cuda" else None
+    )
     if device != "cuda":
         model.to(device)
     model.eval()
@@ -853,38 +876,110 @@ def main():
 
     train_items = load_json(TRAIN_JSON)
     test_items = load_json(TEST_JSON)
-    save_json(test_items, os.path.join(OUT_DIR, "test_reference.json"))
     ref_path = os.path.join(OUT_DIR, "test_reference.json")
+    _write_json(test_items, ref_path)
     print(f"Train: {len(train_items)}, Test: {len(test_items)}")
 
     all_layers = get_layers(model)
-    target_layers = get_target_layers(len(all_layers), LAYER_FRACTION)
+    target_layers = get_target_layers(len(all_layers), LAYER_FRACTION, LAYER_QUARTER)
     print(f"Total layers: {len(all_layers)}, Steering layers: {target_layers}")
 
-    steering_data = compute_steering_data(model, tokenizer, train_items, target_layers)
-    torch.save(steering_data, os.path.join(OUT_DIR, "steering_data.pt"))
+    steering_data = load_or_compute_steering(model, tokenizer, train_items, target_layers)
+    print(f"Steering cache path: {get_steering_cache_path()}")
 
+    # ------------------------------------------------------------------
+    # Layerwise alpha optimization
+    # ------------------------------------------------------------------
     if MODE == "layerwise":
-        best_layer_alphas, best_result = optimize_layerwise_alphas(model, tokenizer, train_items, test_items, steering_data, ref_path)
-        save_json({"layer_alphas": {str(k): v for k, v in best_layer_alphas.items()}, "result": best_result}, os.path.join(OUT_DIR, "layerwise_best.json"))
+        best_layer_alphas, best_result = optimize_layerwise_alphas(
+            model, tokenizer, train_items, test_items, steering_data, ref_path
+        )
+        save_json(
+            {"layer_alphas": {str(k): v for k, v in best_layer_alphas.items()}, "result": best_result},
+            os.path.join(OUT_DIR, "layerwise_best.json"),
+        )
         preds = predict_dataset(model, tokenizer, train_items, test_items, steering_data, 0, "layerwise", best_layer_alphas)
-        pred_path = os.path.join(OUT_DIR, "preds_layerwise_best.json")
-        save_json(preds, pred_path)
+        save_json(preds, os.path.join(OUT_DIR, "preds_layerwise_best.json"))
         print_subgroup_accuracy(test_items, preds)
         return
 
+    # ------------------------------------------------------------------
+    # Layerwise + entropy
+    # ------------------------------------------------------------------
     if MODE == "layerwise_entropy":
-        best_layer_alphas, _ = optimize_layerwise_alphas(model, tokenizer, train_items, test_items, steering_data, ref_path)
+        best_layer_alphas, _ = optimize_layerwise_alphas(
+            model, tokenizer, train_items, test_items, steering_data, ref_path
+        )
         print(f"\nRunning entropy-gated with optimized per-layer alphas...")
         preds = predict_entropy_gated(model, tokenizer, train_items, test_items, steering_data, 0, best_layer_alphas)
-        pred_path = os.path.join(OUT_DIR, "preds_layerwise_entropy.json")
-        save_json(preds, pred_path)
+        save_json(preds, os.path.join(OUT_DIR, "preds_layerwise_entropy.json"))
         print_subgroup_accuracy(test_items, preds)
-        result = run_official_eval(EVAL_SCRIPT, ref_path, pred_path, os.path.join(OUT_DIR, "eval_layerwise_entropy.json"))
+        eval_pred_path = os.path.join(OUT_DIR, "tmp_eval_preds.json")
+        _write_json(preds, eval_pred_path)
+        result = run_official_eval(EVAL_SCRIPT, ref_path, eval_pred_path, os.path.join(OUT_DIR, "tmp_eval_result.json"))
         print(f"  ACC={result['accuracy']:.2f}  TCE={result['content_effect']:.4f}  Score={result['combined_score']:.4f}")
-        save_json({"layer_alphas": {str(k): v for k, v in best_layer_alphas.items()}, "result": result}, os.path.join(OUT_DIR, "layerwise_entropy_best.json"))
+        save_json(
+            {"layer_alphas": {str(k): v for k, v in best_layer_alphas.items()}, "result": result},
+            os.path.join(OUT_DIR, "layerwise_entropy_best.json"),
+        )
         return
 
+    # ------------------------------------------------------------------
+    # Entropy-gated sweep over (threshold, alpha)
+    # ------------------------------------------------------------------
+    if MODE == "entropy_gated":
+        best_score = -1
+        best_config = None
+        summary = []
+
+        for threshold in ENTROPY_THRESHOLDS:
+            print(f"\n########## ENTROPY_THRESHOLD = {threshold} ##########")
+
+            for alpha in ALPHAS:
+                print(f"\n===== ENTROPY_GATED threshold={threshold} alpha={alpha} =====")
+                preds = predict_dataset(
+                    model, tokenizer, train_items, test_items, steering_data,
+                    alpha, MODE, threshold=threshold,
+                )
+
+                tag = f"t{str(threshold).replace('.', 'p')}_a{str(alpha).replace('-', 'neg').replace('.', 'p')}"
+                eval_pred_path = os.path.join(OUT_DIR, "tmp_eval_preds.json")
+                _write_json(preds, eval_pred_path)
+                save_json(preds, os.path.join(OUT_DIR, f"preds_entropy_{tag}.json"))
+                print_subgroup_accuracy(test_items, preds)
+
+                result = run_official_eval(
+                    EVAL_SCRIPT, ref_path, eval_pred_path,
+                    os.path.join(OUT_DIR, "tmp_eval_result.json"),
+                )
+                print(f"  ACC={result['accuracy']:.2f}  TCE={result['content_effect']:.4f}  Score={result['combined_score']:.4f}")
+                save_json(result, os.path.join(OUT_DIR, f"eval_entropy_{tag}.json"))
+
+                summary.append({
+                    "threshold": threshold,
+                    "alpha": alpha,
+                    "accuracy": result["accuracy"],
+                    "content_effect": result["content_effect"],
+                    "combined_score": result["combined_score"],
+                })
+
+                if result["combined_score"] > best_score:
+                    best_score = result["combined_score"]
+                    best_config = {"threshold": threshold, "alpha": alpha}
+
+        print(f"\n===== ENTROPY_GATED SWEEP SUMMARY =====")
+        print(f"{'Thresh':>8s}  {'Alpha':>8s}  {'ACC':>8s}  {'TCE':>10s}  {'Score':>10s}")
+        for s in summary:
+            is_best = (s["threshold"] == best_config["threshold"] and s["alpha"] == best_config["alpha"])
+            marker = " <-- best" if is_best else ""
+            print(f"{s['threshold']:>8.2f}  {s['alpha']:>8.1f}  {s['accuracy']:>8.2f}  {s['content_effect']:>10.4f}  {s['combined_score']:>10.4f}{marker}")
+        print(f"\nBest: threshold={best_config['threshold']} alpha={best_config['alpha']} score={best_score:.4f}")
+        save_json(summary, os.path.join(OUT_DIR, "sweep_summary_entropy_gated.json"))
+        return
+
+    # ------------------------------------------------------------------
+    # Standard alpha sweep (static, cast, kcast, validity_cond, validity_cond_kcast, structure_aware)
+    # ------------------------------------------------------------------
     best_score = -1
     best_alpha = 0
     summary = []
@@ -893,12 +988,19 @@ def main():
         print(f"\n===== {MODE.upper()} Alpha = {alpha} =====")
         preds = predict_dataset(model, tokenizer, train_items, test_items, steering_data, alpha, MODE)
         tag = str(alpha).replace("-", "neg").replace(".", "p")
-        pred_path = os.path.join(OUT_DIR, f"preds_{MODE}_alpha_{tag}.json")
-        save_json(preds, pred_path)
+        eval_pred_path = os.path.join(OUT_DIR, "tmp_eval_preds.json")
+        _write_json(preds, eval_pred_path)
+        save_json(preds, os.path.join(OUT_DIR, f"preds_{MODE}_alpha_{tag}.json"))
         print_subgroup_accuracy(test_items, preds)
-        result = run_official_eval(EVAL_SCRIPT, ref_path, pred_path, os.path.join(OUT_DIR, f"eval_{MODE}_alpha_{tag}.json"))
+        result = run_official_eval(EVAL_SCRIPT, ref_path, eval_pred_path, os.path.join(OUT_DIR, "tmp_eval_result.json"))
         print(f"  ACC={result['accuracy']:.2f}  TCE={result['content_effect']:.4f}  Score={result['combined_score']:.4f}")
-        summary.append({"alpha": alpha, "accuracy": result["accuracy"], "content_effect": result["content_effect"], "combined_score": result["combined_score"]})
+        save_json(result, os.path.join(OUT_DIR, f"eval_{MODE}_alpha_{tag}.json"))
+        summary.append({
+            "alpha": alpha,
+            "accuracy": result["accuracy"],
+            "content_effect": result["content_effect"],
+            "combined_score": result["combined_score"],
+        })
         if result["combined_score"] > best_score:
             best_score = result["combined_score"]
             best_alpha = alpha
