@@ -1,4 +1,6 @@
+# Ignore Jupyter checkpoint autosaves
 .ipynb_checkpoints/
+
 __pycache__/
 *.pyc
 *.pyo
@@ -13,7 +15,5 @@ results*/
 subtask*_results*/
 lora_*_output/
 qwen*_circuit/
-
-*.ipynb
 
 .env
